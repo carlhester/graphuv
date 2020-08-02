@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -12,9 +11,7 @@ import (
 	chart "github.com/wcharczuk/go-chart"
 )
 
-func drawChart(res http.ResponseWriter, req *http.Request) {
-	lines := readLinesFromFile()
-	times, vals := linesToTimeValues(lines)
+func drawChart(times []time.Time, vals []float64) int {
 
 	graph := chart.Chart{
 		XAxis: chart.XAxis{
@@ -29,18 +26,17 @@ func drawChart(res http.ResponseWriter, req *http.Request) {
 		},
 	}
 
-	res.Header().Set("Content-Type", "image/png")
-	graph.Render(chart.PNG, res)
+	f, _ := os.Create("output.png")
+	defer f.Close()
+	graph.Render(chart.PNG, f)
+	return 0
 }
 
 func main() {
-	http.HandleFunc("/", drawChart)
-	http.HandleFunc("/favicon.ico", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte{})
-	})
-	addr := ":8080"
-	fmt.Println("listening on ", addr)
-	http.ListenAndServe(addr, nil)
+	lines := readLinesFromFile()
+	times, vals := linesToTimeValues(lines)
+	result := drawChart(times, vals)
+	os.Exit(result)
 }
 
 func readLinesFromFile() []string {
